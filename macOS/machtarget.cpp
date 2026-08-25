@@ -33,6 +33,9 @@ limitations under the License.
   #define ARCH_THREAD_STATE x86_THREAD_STATE64
 #endif
 
+#define STRIP_MTE_TAG(ptr) \
+    ((ptr) & 0x00FFFFFFFFFFFFFFULL)
+
 MachTarget::MachTarget(pid_t target_pid): pid(target_pid), m_page_size(INVALID_PAGE_SIZE) {
   kern_return_t krt;
 
@@ -190,6 +193,8 @@ void MachTarget::FreeMemory(uint64_t address, size_t size) {
 }
 
 void MachTarget::ReadMemory(uint64_t address, size_t size, void *buf) {
+  address = STRIP_MTE_TAG(address);
+
   if (buf == NULL) {
     WARN("ReadMemory is called with buf == NULL\n");
     return;
@@ -229,6 +234,8 @@ void MachTarget::ReadMemory(uint64_t address, size_t size, void *buf) {
 }
 
 void MachTarget::WriteMemory(uint64_t address, const void *buf, size_t size) {
+  address = STRIP_MTE_TAG(address);
+
   if (buf == NULL) {
     WARN("WriteMemory is called with buf == NULL\n");
     return;
