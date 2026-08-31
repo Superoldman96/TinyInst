@@ -948,8 +948,11 @@ void TinyInst::InstrumentModule(ModuleInfo *module) {
 #endif
 
   if (!module->instrumented_code_remote) {
-    // TODO also try allocating after the module
+#ifdef __APPLE__
+    FATAL("Error allocating remote code buffer. Please retry with -unmap_unused_pages.\n");
+#else
     FATAL("Error allocating remote code buffer\n");
+#endif
   }
 
   if ((indirect_instrumentation_mode == II_GLOBAL) ||

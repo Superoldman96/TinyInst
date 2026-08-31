@@ -594,6 +594,16 @@ void *Debugger::RemoteAllocateBefore(uint64_t min_address,
     vm_region_submap_info_data_64_t info;
     mach_target->GetRegionSubmapInfo(&region_address, &region_size, &info);
 
+    // unmap unused pages
+    if(unmap_unused_pages && !info.protection && !info.max_protection) {
+      kern_return_t krt = mach_vm_deallocate(mach_target->Task(),
+                                             region_address,
+                                             region_size);
+      if (krt == KERN_SUCCESS) {
+        continue;
+      }
+    }
+
     if (region_address <= cur_address) { /* cur_address references allocated memory */
       cur_address = region_address;
     } else { /* cur_address references unallocated memory */
@@ -626,6 +636,7 @@ void *Debugger::RemoteAllocateAfter(uint64_t min_address,
                                          uint64_t max_address,
                                          size_t size,
                                          MemoryProtection protection) {
+
   vm_prot_t protection_flags = MacOSProtectionFlags(protection);
 
   mach_vm_address_t cur_address = min_address;
@@ -634,6 +645,16 @@ void *Debugger::RemoteAllocateAfter(uint64_t min_address,
     mach_vm_size_t region_size = 0;
     vm_region_submap_info_data_64_t info;
     mach_target->GetRegionSubmapInfo(&region_address, &region_size, &info);
+
+    // unmap unused pages
+    if(unmap_unused_pages && !info.protection && !info.max_protection) {
+      kern_return_t krt = mach_vm_deallocate(mach_target->Task(),
+                                             region_address,
+                                             region_size);
+      if (krt == KERN_SUCCESS) {
+        continue;
+      }
+    }
 
     if (region_address <= cur_address) { /* cur_address references allocated memory */
       cur_address = region_address + region_size;
@@ -2183,6 +2204,8 @@ void Debugger::Init(int argc, char **argv) {
   if (option) target_memory_limit = (uint64_t)strtoul(option, NULL, 0) * 1024 * 1024;
 
   mute_child = GetBinaryOption("-mute_child", argc, argv, false);
+
+  unmap_unused_pages = GetBinaryOption("-unmap_unused_pages", argc, argv, false);
 
   dyld_address = NULL;
 }

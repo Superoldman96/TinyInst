@@ -440,6 +440,8 @@ private:
   void *dyld_address;
   
   bool mute_child;
+
+  bool unmap_unused_pages;
 };
 
 
